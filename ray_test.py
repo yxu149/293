@@ -109,6 +109,8 @@ def hash_partition(
     input_stream: Iterable[InType], num_partitions: int
 ) -> Iterable[Tuple[PartitionID, InType]]:
 
+    partitionHash = []
+
     def convertToHashable(item):
         
 
@@ -116,21 +118,25 @@ def hash_partition(
             return tuple(convertToHashable(i) for i in item)
 
 
+    
     for item in input_stream:
 
+        print(item)
         partitionId = 0
-        print(sum(1 for _ in input_stream))
+        print(sum(1 for _ in input_stream), 'sum')
 
         hashItem = convertToHashable(item)
 
         hashValue = hash(hashItem)
 
-        partitionHash = []
-        print(len(partitionHash), 'partHash')
+        
+        
         partitionHash.append(hashValue)
+        print(len(partitionHash), 'partHash')
 
 
         print(partitionHash)
+        print(len(partitionHash), 'partHash1')
             
         yield partitionId, item
     
@@ -140,9 +146,12 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
 
 
     # Calculate the number of items per partition
-    items_per_partition = (sum(1 for _ in input_stream)) // num_partitions
+    itemsPerPartition = (sum(1 for _ in input_stream)) // num_partitions
 
     #Assign items to partition
+    partition_id = 0
+    
+
     partitionIndex = 0
     partitionCount = 0
     partitions = []
@@ -150,11 +159,12 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
         partitions[partitionIndex].append(item)
         partitionIndex = partitionIndex + 1
         partitionCount = partitionCount + 1
-        if partitionCount > items_per_partition:
+        if partitionCount > itemsPerPartition:
             partitionCount = 0
             partitionIndex = partitionIndex + 1
     
-    yield partition_id, item
+    print(partitions, 'part')
+        yield partition_id, item
 
 
 @ray.remote
@@ -222,7 +232,7 @@ def simple_shuffle(
         [Iterable[InType], int], Iterable[PartitionID], 
     #] = round_robin_partitioner,
     #] = hash_partition,
-    ] = horizontal_partitioner,
+    ] = round_robin_partitioner,
     #horizontal_partitioner
     #partitioner = hash_partition,
     object_store_writer: ObjectStoreWriter = ObjectStoreWriter,
@@ -310,7 +320,7 @@ def graphTimeTakenToRun(sizeOfDataShuffled, time):
 def run(
     ray_address=None,
     object_store_memory=1e9,
-    num_partitions=5,
+    num_partitions=4,
     partition_size=200e6,
     num_nodes=None,
     num_cpus=8,
