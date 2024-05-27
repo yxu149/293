@@ -23,13 +23,15 @@ This will print out some statistics on the shuffle execution such as:
     Shuffled 9536 MiB in 16.579771757125854 seconds
 """
 import time
-from typing import Any, Callable, Iterable, List, Tuple, Union
 import matplotlib.pyplot as plt
-
+import numpy as np
 import ray
+
+from tqdm import tqdm
+from typing import Any, Callable, Iterable, List, Tuple, Union
 from ray import ObjectRef
 from ray.cluster_utils import Cluster
-import numpy as np
+from hashlib import sha256
 
 # TODO(ekl) why doesn't TypeVar() deserialize properly in Ray?
 # The type produced by the input reader function.
@@ -38,9 +40,6 @@ InType = Any
 OutType = Any
 # Integer identifying the partition number.
 PartitionID = int
-
-from hashlib import sha256
-
 
 class ObjectStoreWriter:
     """This class is used to stream shuffle map outputs to the object store.
@@ -112,48 +111,31 @@ def hash_partition(
     partitionHash = []
 
     def convertToHashable(item):
-        
-
         if isinstance(item, np.ndarray): # it is
             return tuple(convertToHashable(i) for i in item)
 
-
-    
     for item in input_stream:
-        for test in item:
+        print(item)
+        partitionId = 0
+        print(sum(1 for _ in input_stream), 'sum')
 
-            print(test)
-            partitionId = 0
-            print(sum(1 for _ in input_stream), 'sum')
-
-            hashItem = convertToHashable(test)
-
-            hashValue = hash(hashItem)
-
+        hashItem = convertToHashable(item)
+        hashValue = hash(hashItem)
+        partitionHash.append(hashValue)
+        print(len(partitionHash), 'partHash')
+        print(partitionHash)
+        print(len(partitionHash), 'partHash1')
             
-            
-            partitionHash.append(hashValue)
-            
-            print(len(partitionHash), 'partHash')
-
-
-            print(partitionHash)
-            print(len(partitionHash), 'partHash1')
-                
-            yield hashValue, test
+        yield partitionId, item
     
 
 def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
 ) -> Iterable[Tuple[PartitionID, InType]]:
-
-
     # Calculate the number of items per partition
     itemsPerPartition = (sum(1 for _ in input_stream)) // num_partitions
-
     #Assign items to partition
     partition_id = 0
     
-
     partitionIndex = 0
     partitionCount = 0
     partitions = []
@@ -165,8 +147,8 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
             partitionCount = 0
             partitionIndex = partitionIndex + 1
     
-        print(partitions, 'part')
-        yield partition_id, item
+    print(partitions, 'part')
+    yield partition_id, item
 
 
 @ray.remote
@@ -202,8 +184,6 @@ class _StatusTracker:
 
 
 def render_progress_bar(tracker, input_num_partitions, output_num_partitions):
-    from tqdm import tqdm
-
     num_map = 0
     num_reduce = 0
     map_bar = tqdm(total=input_num_partitions, position=0)
@@ -234,7 +214,7 @@ def simple_shuffle(
         [Iterable[InType], int], Iterable[PartitionID], 
     #] = round_robin_partitioner,
     #] = hash_partition,
-    ] = hash_partition,
+    ] = round_robin_partitioner,
     #horizontal_partitioner
     #partitioner = hash_partition,
     object_store_writer: ObjectStoreWriter = ObjectStoreWriter,
@@ -332,10 +312,6 @@ def run(
 
     
 ):
-    import time
-
-    import numpy as np
-
     is_multi_node = num_nodes
     if ray_address:
         print("Connecting to a existing cluster...")
