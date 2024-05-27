@@ -149,11 +149,8 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
         if partitionCount > itemsPerPartition:
             partitionCount = 0
             partitionIndex = partitionIndex + 1
-    
-    print(partitions, 'part')
-    yield partition_id, item
-
-
+        print(partitions, 'part')
+        yield partition_id, item
 
 
 @ray.remote
