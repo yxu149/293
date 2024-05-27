@@ -41,6 +41,7 @@ OutType = Any
 # Integer identifying the partition number.
 PartitionID = int
 
+# Original Functions DO NOT TOUCH v
 class ObjectStoreWriter:
     """This class is used to stream shuffle map outputs to the object store.
 
@@ -49,7 +50,6 @@ class ObjectStoreWriter:
     input records are small (the example shuffle uses very large records, so
     the naive strategy works well).
     """
-
     def __init__(self):
         self.results = []
 
@@ -75,8 +75,9 @@ class ObjectStoreWriterNonStreaming(ObjectStoreWriter):
 
     def finish(self) -> List[Any]:
         return self.results
+# DO NOT TOUCH ^
 
-
+# Original 
 def round_robin_partitioner(
     input_stream: Iterable[InType], num_partitions: int
 ) -> Iterable[Tuple[PartitionID, InType]]:
@@ -102,14 +103,11 @@ def round_robin_partitioner(
         i %= num_partitions
 
 # This involves applying a hash function to each item and assigning items to partitions based on the hash value. 
-#It ensures that items with the same hash value are always routed to the same partition
-
+# It ensures that items with the same hash value are always routed to the same partition
 def hash_partition(
     input_stream: Iterable[InType], num_partitions: int
 ) -> Iterable[Tuple[PartitionID, InType]]:
-
     partitionHash = []
-
     def convertToHashable(item):
         if isinstance(item, np.ndarray): # it is
             return tuple(convertToHashable(i) for i in item)
@@ -149,6 +147,8 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
     
     print(partitions, 'part')
     yield partition_id, item
+
+
 
 
 @ray.remote
@@ -297,8 +297,6 @@ def graphTimeTakenToRun(sizeOfDataShuffled, time):
     fig.savefig('t.png')
 
 
-    
-
 def run(
     ray_address=None,
     object_store_memory=1e9,
@@ -325,7 +323,7 @@ def run(
         ray.init(address=cluster.address)
     else:
         print("Start a new cluster...")
-        print("hello world")
+        #print("hello world")
 
         ray.init(num_cpus=num_cpus, object_store_memory=object_store_memory)
 
@@ -403,8 +401,6 @@ def run(
     print(int(sum(output_sizes) / (1024 * 1024)))
     print(delta, 'delta')
     graphTimeTakenToRun((sizeOfDataShuffled),(delta))
-
-    
 
 
 def main():
