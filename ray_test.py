@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """A simple distributed shuffle implementation in Ray.
 
 This utility provides a `simple_shuffle` function that can be used to
@@ -164,7 +166,7 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
             partitionIndex = partitionIndex + 1
     
     print(partitions, 'part')
-        yield partition_id, item
+    yield partition_id, item
 
 
 @ray.remote
