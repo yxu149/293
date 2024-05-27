@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """A simple distributed shuffle implementation in Ray.
 
 This utility provides a `simple_shuffle` function that can be used to
@@ -122,25 +120,27 @@ def hash_partition(
 
     
     for item in input_stream:
+        for test in item:
 
-        print(item)
-        partitionId = 0
-        print(sum(1 for _ in input_stream), 'sum')
+            print(test)
+            partitionId = 0
+            print(sum(1 for _ in input_stream), 'sum')
 
-        hashItem = convertToHashable(item)
+            hashItem = convertToHashable(test)
 
-        hashValue = hash(hashItem)
+            hashValue = hash(hashItem)
 
-        
-        
-        partitionHash.append(hashValue)
-        print(len(partitionHash), 'partHash')
-
-
-        print(partitionHash)
-        print(len(partitionHash), 'partHash1')
             
-        yield partitionId, item
+            
+            partitionHash.append(hashValue)
+            
+            print(len(partitionHash), 'partHash')
+
+
+            print(partitionHash)
+            print(len(partitionHash), 'partHash1')
+                
+            yield hashValue, test
     
 
 def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
@@ -165,8 +165,8 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
             partitionCount = 0
             partitionIndex = partitionIndex + 1
     
-    print(partitions, 'part')
-    yield partition_id, item
+        print(partitions, 'part')
+        yield partition_id, item
 
 
 @ray.remote
@@ -234,7 +234,7 @@ def simple_shuffle(
         [Iterable[InType], int], Iterable[PartitionID], 
     #] = round_robin_partitioner,
     #] = hash_partition,
-    ] = round_robin_partitioner,
+    ] = hash_partition,
     #horizontal_partitioner
     #partitioner = hash_partition,
     object_store_writer: ObjectStoreWriter = ObjectStoreWriter,
