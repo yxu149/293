@@ -113,18 +113,23 @@ def hash_partition(
             return tuple(convertToHashable(i) for i in item)
 
     for item in input_stream:
-        print(item)
-        partitionId = 0
-        print(sum(1 for _ in input_stream), 'sum')
+        for test in item:
+            print(test)
+            partitionId = 0
+            print(sum(1 for _ in input_stream), 'sum')
 
-        hashItem = convertToHashable(item)
-        hashValue = hash(hashItem)
-        partitionHash.append(hashValue)
-        print(len(partitionHash), 'partHash')
-        print(partitionHash)
-        print(len(partitionHash), 'partHash1')
-            
-        yield partitionId, item
+            hashItem = convertToHashable(test)
+            hashValue = hash(hashItem)
+
+            yield partitionId, item
+            partitionHash.append(hashValue)
+
+            print(len(partitionHash), 'partHash')
+
+            print(partitionHash)
+            print(len(partitionHash), 'partHash1')
+
+            yield hashValue, test
     
 
 def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
@@ -368,6 +373,7 @@ def run(
         output_writer_callable = output_writer
 
     start = time.time()
+
     output_sizes = simple_shuffle(
         input_reader=input_reader,
         input_num_partitions=num_partitions,
@@ -377,8 +383,7 @@ def run(
         tracker=tracker,
     )
     delta = time.time() - start
-
-    time.sleep(0.5)
+    
     print()
 
     summary = None
@@ -401,6 +406,8 @@ def run(
     print(int(sum(output_sizes) / (1024 * 1024)))
     print(delta, 'delta')
     graphTimeTakenToRun((sizeOfDataShuffled),(delta))
+    # for performance tracking
+    return delta 
 
 
 def main():
@@ -417,7 +424,7 @@ def main():
     parser.add_argument("--use-wait", action="store_true", default=False)
     args = parser.parse_args()
 
-    run(
+    delta = run(
         ray_address=args.ray_address,
         object_store_memory=args.object_store_memory,
         num_partitions=args.num_partitions,
@@ -427,7 +434,8 @@ def main():
         no_streaming=args.no_streaming,
         use_wait=args.use_wait,
     )
+    return delta
 
 
 if __name__ == "__main__":
-    main()
+    delta = main()
