@@ -129,7 +129,7 @@ def hash_partition(
             print(partitionHash)
             print(len(partitionHash), 'partHash1')
 
-        yield hashValue, test
+        yield partitionId, test
     
 
 def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
@@ -219,7 +219,7 @@ def simple_shuffle(
         [Iterable[InType], int], Iterable[PartitionID], 
     #] = round_robin_partitioner,
     #] = hash_partition,
-    ] = horizontal_partitioner,
+    ] = hash_partition,
     #horizontal_partitioner
     #partitioner = hash_partition,
     object_store_writer: ObjectStoreWriter = ObjectStoreWriter,
