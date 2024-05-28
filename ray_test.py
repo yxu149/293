@@ -121,7 +121,7 @@ def hash_partition(
             hashItem = convertToHashable(test)
             hashValue = hash(hashItem)
 
-            yield partitionId, item
+            
             partitionHash.append(hashValue)
 
             print(len(partitionHash), 'partHash')
