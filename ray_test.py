@@ -151,6 +151,7 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
             partitionIndex = partitionIndex + 1
     
         print(partitions, 'part')
+
         yield partition_id, item
 
 
@@ -219,7 +220,7 @@ def simple_shuffle(
         [Iterable[InType], int], Iterable[PartitionID], 
     #] = round_robin_partitioner,
     #] = hash_partition,
-    ] = hash_partition,
+    ] = horizontal_partitioner,
     #horizontal_partitioner
     #partitioner = hash_partition,
     object_store_writer: ObjectStoreWriter = ObjectStoreWriter,
@@ -250,20 +251,26 @@ def simple_shuffle(
 
     @ray.remote(num_returns=output_num_partitions)
     def shuffle_map(i: PartitionID) -> List[List[Union[Any, ObjectRef]]]:
+        sm_begin = time.time()
         writers = [object_store_writer() for _ in range(output_num_partitions)]
         for out_i, item in partitioner(input_reader(i), output_num_partitions):
             writers[out_i].add(item)
+        sm_time = time.time() - sm_begin
+        print("\nShuffle Map Time Taken:", sm_time, "\n")
         return [c.finish() for c in writers]
 
     @ray.remote
     def shuffle_reduce(
         i: PartitionID, *mapper_outputs: List[List[Union[Any, ObjectRef]]]
     ) -> OutType:
+        sr_begin = time.time()
         input_objects = []
         assert len(mapper_outputs) == input_num_partitions
         for obj_refs in mapper_outputs:
             for obj_ref in obj_refs:
                 input_objects.append(obj_ref)
+        sr_time = time.time() - sr_begin 
+        print("\nShuffle Reduce Time Taken:", sr_time, "\n")
         return output_writer(i, input_objects)
 
     shuffle_map_out = [shuffle_map.remote(i) for i in range(input_num_partitions)]
