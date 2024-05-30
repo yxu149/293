@@ -128,7 +128,7 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
 ) -> Iterable[Tuple[PartitionID, InType]]:
     # Calculate the number of items per partition
     itemsPerPartition = (sum(1 for _ in input_stream)) // num_partitions
-    #Assign items to partition
+
     partitionId = 0
     
     partitionIndex = 0
@@ -138,7 +138,9 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
         partitions[partitionIndex].append(item)
         partitionIndex = partitionIndex + 1
         partitionCount = partitionCount + 1
-        if partitionCount > itemsPerPartition:
+        partitionId = partitionIndex % partitionCount
+
+        if partitionCount >= itemsPerPartition:
             partitionCount = 0
             partitionIndex = partitionIndex + 1
     
