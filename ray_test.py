@@ -97,8 +97,6 @@ def round_robin_partitioner(
         #yield (i, item)
         yield(i, item)
 
-        print(i, "i")
-        print(item, "item")
         i += 1
         i %= num_partitions
 
@@ -113,23 +111,17 @@ def hash_partition(
             return tuple(convertToHashable(i) for i in item)
 
     for item in input_stream:
-        for test in item:
-            print(test)
-            partitionId = 0
-            print(sum(1 for _ in input_stream), 'sum')
+        for indItem in item:
 
-            hashItem = convertToHashable(test)
+            partitionId = 0
+
+            hashItem = convertToHashable(indItem)
             hashValue = hash(hashItem)
 
-            
             partitionHash.append(hashValue)
+            partitionId = hashValue % num_partitions
 
-            print(len(partitionHash), 'partHash')
-
-            print(partitionHash)
-            print(len(partitionHash), 'partHash1')
-
-        yield partitionId, test
+        yield partitionId, indItem
     
 
 def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
@@ -137,7 +129,7 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
     # Calculate the number of items per partition
     itemsPerPartition = (sum(1 for _ in input_stream)) // num_partitions
     #Assign items to partition
-    partition_id = 0
+    partitionId = 0
     
     partitionIndex = 0
     partitionCount = 0
@@ -150,12 +142,7 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
             partitionCount = 0
             partitionIndex = partitionIndex + 1
     
-        print(partitions, 'part')
-
-        yield partition_id, item
-
-
-
+        yield partitionId, item
 
 @ray.remote
 class _StatusTracker:
@@ -251,26 +238,20 @@ def simple_shuffle(
 
     @ray.remote(num_returns=output_num_partitions)
     def shuffle_map(i: PartitionID) -> List[List[Union[Any, ObjectRef]]]:
-        sm_begin = time.time()
         writers = [object_store_writer() for _ in range(output_num_partitions)]
         for out_i, item in partitioner(input_reader(i), output_num_partitions):
             writers[out_i].add(item)
-        sm_time = time.time() - sm_begin
-        print("\nShuffle Map Time Taken:", sm_time, "\n")
         return [c.finish() for c in writers]
 
     @ray.remote
     def shuffle_reduce(
         i: PartitionID, *mapper_outputs: List[List[Union[Any, ObjectRef]]]
     ) -> OutType:
-        sr_begin = time.time()
         input_objects = []
         assert len(mapper_outputs) == input_num_partitions
         for obj_refs in mapper_outputs:
             for obj_ref in obj_refs:
                 input_objects.append(obj_ref)
-        sr_time = time.time() - sr_begin 
-        print("\nShuffle Reduce Time Taken:", sr_time, "\n")
         return output_writer(i, input_objects)
 
     shuffle_map_out = [shuffle_map.remote(i) for i in range(input_num_partitions)]
@@ -411,7 +392,6 @@ def run(
     sizeOfDataShuffled = (int(sum(output_sizes) / (1024 * 1024)))
 
     print(int(sum(output_sizes) / (1024 * 1024)))
-    print(delta, 'delta')
     graphTimeTakenToRun((sizeOfDataShuffled),(delta))
     # for performance tracking
     return delta 
