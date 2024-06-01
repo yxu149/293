@@ -100,8 +100,7 @@ def round_robin_partitioner(
         i += 1
         i %= num_partitions
 
-# This involves applying a hash function to each item and assigning items to partitions based on the hash value. 
-# It ensures that items with the same hash value are always routed to the same partition
+
 def hash_partition(
     input_stream: Iterable[InType], num_partitions: int
 ) -> Iterable[Tuple[PartitionID, InType]]:
@@ -109,6 +108,7 @@ def hash_partition(
     def convertToHashable(item):
         if isinstance(item, np.ndarray): # it is
             return tuple(convertToHashable(i) for i in item)
+    
 
     for item in input_stream:
         for indItem in item:
@@ -129,6 +129,8 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
     # Calculate the number of items per partition
     itemsPerPartition = (sum(1 for _ in input_stream)) // num_partitions
 
+    print(input_stream, 'is')
+
     partitionId = 0
     
     partitionIndex = 0
@@ -143,6 +145,7 @@ def horizontal_partitioner(input_stream: Iterable[InType], num_partitions: int
         if partitionCount >= itemsPerPartition:
             partitionCount = 0
             partitionIndex = partitionIndex + 1
+            partitionId = partitionId + 1
     
         yield partitionId, item
 
